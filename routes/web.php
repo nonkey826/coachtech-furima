@@ -18,9 +18,10 @@ use App\Http\Controllers\LikeController;
 */
 
 // =========================
-// top
+// top（未ログインでも閲覧可）
 // =========================
-Route::get('/', [ItemController::class, 'index']);
+Route::get('/', [ItemController::class, 'index'])
+    ->name('top');
 
 
 // =========================
@@ -29,7 +30,7 @@ Route::get('/', [ItemController::class, 'index']);
 Route::middleware(['auth'])->group(function () {
 
     // =========================
-    // items
+    // items（商品）
     // =========================
     Route::get('/items', [ItemController::class, 'index'])
         ->name('items.index');
@@ -43,15 +44,34 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/items/{item}', [ItemController::class, 'show'])
         ->name('items.show');
 
+    Route::get('/items/{item}/edit', [ItemController::class, 'edit'])
+        ->name('items.edit');
+
+    Route::put('/items/{item}', [ItemController::class, 'update'])
+        ->name('items.update');
+
     Route::delete('/items/{item}', [ItemController::class, 'destroy'])
         ->name('items.destroy');
 
 
     // =========================
-    // comments
+    // comments（コメント）
     // =========================
     Route::post('/items/{item}/comments', [CommentController::class, 'store'])
         ->name('comments.store');
+
+
+    // =========================
+    // like（いいね）
+    // =========================
+    Route::post('/items/{item}/like', [LikeController::class, 'store'])
+        ->name('likes.store');
+
+    Route::delete('/items/{item}/like', [LikeController::class, 'destroy'])
+        ->name('likes.destroy');
+
+    Route::get('/mypage/likes', [LikeController::class, 'index'])
+        ->name('likes.index');
 
 
     // =========================
@@ -66,15 +86,15 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('items.index');
     });
 
-    // ① 購入画面
+    // 購入入力画面
     Route::get('/purchase/{item}/input', [PurchaseController::class, 'input'])
         ->name('purchase.input');
 
-    // ② 購入確定（Stripe Checkout）
+    // Stripe決済実行
     Route::post('/items/{item}/purchase', [PurchaseController::class, 'store'])
         ->name('item.purchase');
 
-    // ③ 購入完了
+    // 購入完了
     Route::get('/purchase/{item}/complete', [PurchaseController::class, 'complete'])
         ->name('purchase.complete');
 
@@ -116,22 +136,10 @@ Route::middleware(['auth'])->group(function () {
 
 
 // =========================
-// like（いいね機能）
+// auth routes（Laravel標準）
 // =========================
-Route::middleware(['auth'])->group(function () {
-
-    Route::post('/items/{item}/like', [LikeController::class, 'store'])
-        ->name('likes.store');
-
-    Route::delete('/items/{item}/like', [LikeController::class, 'destroy'])
-        ->name('likes.destroy');
-
-    Route::get('/mypage/likes', [LikeController::class, 'index'])
-        ->name('likes.index');
-});
-
-
 require __DIR__ . '/auth.php';
+
 
 
 

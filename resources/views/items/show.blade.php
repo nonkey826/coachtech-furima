@@ -5,30 +5,25 @@
 @section('content')
 
 <style>
-/* ===== 全体 ===== */
 .item-detail-wrap{
     width:900px;
     margin:40px auto 80px;
 }
 
-/* ===== 上段 ===== */
 .item-main{
     display:flex;
     align-items:flex-start;
     gap:40px;
 }
 
-/* 左：画像 */
 .item-image{
     width:380px;
     height:380px;
-    flex-shrink:0;
     object-fit:cover;
     background:#ddd;
     border-radius:6px;
 }
 
-/* 右：情報 */
 .item-right{
     flex:1;
 }
@@ -46,7 +41,6 @@
     margin-bottom:10px;
 }
 
-/* いいね・コメント数 */
 .item-meta{
     display:flex;
     align-items:center;
@@ -56,7 +50,6 @@
     color:#555;
 }
 
-/* 購入ボタン */
 .purchase-btn{
     display:block;
     width:100%;
@@ -67,17 +60,14 @@
     font-weight:700;
     border-radius:6px;
     text-decoration:none;
-    border:none;
 }
 
-/* Sold */
 .sold-text{
     margin-top:20px;
     font-weight:700;
     color:#999;
 }
 
-/* ===== セクション ===== */
 .section{
     margin-top:50px;
 }
@@ -93,7 +83,6 @@
     font-size:15px;
 }
 
-/* ===== 商品情報 ===== */
 .item-info-row{
     display:flex;
     align-items:center;
@@ -106,14 +95,6 @@
     font-weight:700;
 }
 
-.item-tag{
-    padding:4px 12px;
-    background:#eee;
-    border-radius:20px;
-    font-size:13px;
-}
-
-/* ===== コメント ===== */
 .comment-box{
     margin-bottom:16px;
 }
@@ -130,15 +111,15 @@
     {{-- ===== 上段 ===== --}}
     <div class="item-main">
 
-        {{-- 画像 --}}
+        {{-- 商品画像 --}}
         <img
-            src="{{ Str::startsWith($item->image,['http://','https://'])
+            src="{{ \Illuminate\Support\Str::startsWith($item->image, ['http://','https://'])
                 ? $item->image
                 : asset('images/dummy.png') }}"
             class="item-image"
         >
 
-        {{-- 情報 --}}
+        {{-- 商品情報 --}}
         <div class="item-right">
 
             <h1 class="item-title">{{ $item->title }}</h1>
@@ -149,7 +130,7 @@
 
             <div class="item-meta">
 
-                {{-- ❤️ いいね（一覧と完全同期） --}}
+                {{-- いいね --}}
                 @auth
                     @php
                         $liked = auth()->user()
@@ -182,9 +163,7 @@
                             {{ $liked ? '♥️' : '♡' }}
                         </button>
 
-                        <span style="font-size:14px;color:#666;">
-                            {{ $item->likedUsers->count() }}
-                        </span>
+                        <span>{{ $item->likedUsers->count() }}</span>
                     </form>
                 @endauth
 
@@ -192,7 +171,7 @@
                 <span>💬 {{ $item->comments->count() }}</span>
             </div>
 
-            {{-- 購入 --}}
+            {{-- 購入ボタン --}}
             @auth
                 @if($item->user_id !== auth()->id() && !$item->is_sold)
                     <a href="{{ route('purchase.input', $item) }}" class="purchase-btn">
@@ -220,29 +199,38 @@
 
         <div class="item-info-row">
             <div class="item-info-label">カテゴリー</div>
-            <div>
-                {{ $item->category ?? '-' }}
-            </div>
+            <div>{{ $item->category }}</div>
         </div>
 
         <div class="item-info-row">
             <div class="item-info-label">商品の状態</div>
-            <div>{{ $item->status ?? '-' }}</div>
+            <div>{{ $item->status }}</div>
         </div>
+
+        @if($item->brand)
+        <div class="item-info-row">
+            <div class="item-info-label">ブランド</div>
+            <div>{{ $item->brand }}</div>
+        </div>
+        @endif
     </div>
 
-    {{-- ===== コメント ===== --}}
+    {{-- ===== コメント一覧 ===== --}}
     <div class="section">
         <div class="section-title">
             コメント（{{ $item->comments->count() }}）
         </div>
 
-        @foreach($item->comments as $comment)
+        @forelse($item->comments as $comment)
             <div class="comment-box">
-                <div class="comment-user">{{ $comment->user->name }}</div>
+                <div class="comment-user">
+                    {{ $comment->user->name }}
+                </div>
                 <p>{{ $comment->comment }}</p>
             </div>
-        @endforeach
+        @empty
+            <p>まだコメントはありません</p>
+        @endforelse
     </div>
 
     {{-- ===== コメント投稿 ===== --}}
@@ -257,31 +245,25 @@
                 name="comment"
                 rows="4"
                 placeholder="コメントを入力してください"
-                style="
-                    width:100%;
-                    padding:12px;
-                    border-radius:6px;
-                    border:1px solid #ccc;
-                    resize:none;
-                "
+                style="width:100%;padding:12px;border-radius:6px;border:1px solid #ccc;"
             ></textarea>
 
             <button
-                style="
-                    width:100%;
-                    margin-top:12px;
-                    padding:14px;
-                    background:#ff5555;
-                    color:#fff;
-                    font-weight:700;
-                    border:none;
-                    border-radius:6px;
-                "
+                style="width:100%;margin-top:12px;padding:14px;background:#ff5555;color:#fff;font-weight:700;border:none;border-radius:6px;"
             >
                 コメントを送信する
             </button>
         </form>
     </div>
+    @endauth
+
+    {{-- ===== 編集リンク（出品者のみ） ===== --}}
+    @auth
+        @if(auth()->id() === $item->user_id)
+            <div style="margin-top:30px;">
+                <a href="{{ route('items.edit', $item) }}">画像を変更する</a>
+            </div>
+        @endif
     @endauth
 
 </div>

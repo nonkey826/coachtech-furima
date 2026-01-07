@@ -126,7 +126,32 @@ class ItemController extends Controller
             ->with('success', '商品を削除しました');
     }
 
-   
+   public function edit(Item $item)
+{
+    if ($item->user_id !== Auth::id()) {
+        abort(403);
+    }
+
+    return view('items.edit', compact('item'));
+}
+
+public function update(Request $request, Item $item)
+{
+    if ($item->user_id !== Auth::id()) {
+        abort(403);
+    }
+
+    $request->validate([
+        'image' => 'required|string',
+    ]);
+
+    $item->update([
+        'image' => $request->image,
+    ]);
+
+    return redirect()->route('items.show', $item);
+}
+
 
 }
 
